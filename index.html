@@ -9,29 +9,72 @@
         :root { --neon: #00ff41; --bg: #000; --card: #121212; --text-dim: #888; }
         body { font-family: 'Inter', sans-serif; background-color: var(--bg); color: white; margin: 0; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
 
-        .header { padding: 10px 20px; display: flex; justify-content: space-between; align-items: center; z-index: 1000; background: rgba(0,0,0,0.6); position: relative; }
+        .header { padding: 10px 20px; display: flex; justify-content: space-between; align-items: center; z-index: 1000; background: rgba(0,0,0,0.7); position: relative; }
         .logo { font-weight: 800; font-size: 1rem; }
         .settings-icon { background: var(--card); padding: 5px 10px; border-radius: 8px; cursor: pointer; border: 1px solid #333; }
 
         #map { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; }
 
-        /* Control straturi mutat mai jos de header */
-        .leaflet-control-layers { margin-top: 60px !important; margin-right: 15px !important; background: var(--card) !important; color: white !important; border: 1px solid var(--neon) !important; }
+        /* Overlay Viteză - Poziționat la 15px sub header */
+        .speed-overlay { 
+            position: absolute; 
+            top: 65px; /* Înălțime header + 15px distanță */
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex; 
+            flex-direction: column; 
+            justify-content: center; 
+            align-items: center; 
+            z-index: 10; 
+            pointer-events: none;
+            background: rgba(0, 0, 0, 0.4); /* Fundal discret pentru contrast pe satelit */
+            padding: 10px 20px;
+            border-radius: 20px;
+            backdrop-filter: blur(4px);
+        }
 
-        .speed-overlay { position: relative; flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 10; pointer-events: none; }
-        .speed-value { font-size: 8.5rem; font-weight: 900; color: var(--neon); line-height: 0.8; text-shadow: 0 0 25px rgba(0,0,0,0.9), 2px 2px 5px #000; }
-        .speed-unit { font-size: 1rem; color: #fff; letter-spacing: 4px; text-shadow: 2px 2px 5px #000; font-weight: bold; }
+        .speed-value { 
+            font-size: 6rem; /* Dimensiune ușor redusă pentru a nu ocupa tot ecranul sus */
+            font-weight: 900; 
+            color: var(--neon); 
+            line-height: 0.8; 
+            text-shadow: 2px 2px 10px rgba(0,0,0,1);
+        }
+        .speed-unit { 
+            font-size: 0.9rem; 
+            color: #fff; 
+            letter-spacing: 3px; 
+            font-weight: bold;
+            text-shadow: 1px 1px 3px #000;
+        }
 
-        .bottom-section { position: absolute; bottom: 0; left: 0; right: 0; background: var(--card); padding: 15px 15px 35px 15px; border-top: 3px solid var(--neon); z-index: 1000; box-shadow: 0 -10px 20px rgba(0,0,0,0.5); }
+        /* Control straturi mutat sub viteză sau în lateral */
+        .leaflet-control-layers { 
+            margin-top: 140px !important; 
+            background: rgba(18, 18, 18, 0.9) !important; 
+            color: white !important; 
+            border: 1px solid var(--neon) !important;
+        }
+
+        .bottom-section { 
+            position: absolute; 
+            bottom: 0; 
+            left: 0; 
+            right: 0; 
+            background: var(--card); 
+            padding: 15px 15px 35px 15px; 
+            border-top: 3px solid var(--neon); 
+            z-index: 1000; 
+            box-shadow: 0 -10px 30px rgba(0,0,0,0.8); 
+        }
         .stats-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 15px; }
         .stat-card { text-align: center; }
-        .stat-label { font-size: 8px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1px; }
+        .stat-label { font-size: 8px; color: var(--text-dim); text-transform: uppercase; }
         .stat-value { font-size: 1.2rem; font-weight: 800; color: #fff; }
 
-        .btn { width: 100%; padding: 16px; border-radius: 12px; border: none; font-weight: 900; font-size: 1rem; cursor: pointer; text-transform: uppercase; transition: 0.2s; }
+        .btn { width: 100%; padding: 16px; border-radius: 12px; border: none; font-weight: 900; font-size: 1rem; cursor: pointer; text-transform: uppercase; }
         .btn-start { background: var(--neon); color: #000; }
         .btn-stop { background: #ff3b30; color: white; display: none; }
-        .btn:active { transform: scale(0.98); }
 
         #settingsOverlay { position: fixed; inset: 0; background: var(--bg); z-index: 2000; display: none; padding: 30px; }
         input { background: transparent; border: none; border-bottom: 2px solid var(--neon); color: var(--neon); font-size: 2.5rem; width: 100px; text-align: center; outline: none; }
@@ -75,7 +118,6 @@
         let distance = 0, lastPos = null, startTime, timerIdx, watchIdx, map, marker, path;
         let coordsHistory = [];
 
-        // Definire straturi
         const osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png');
         const satellite = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}');
         const topo = L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png');
@@ -90,21 +132,14 @@
             map = L.map('map', { 
                 zoomControl: false, 
                 attributionControl: false,
-                layers: [osm] // Stratul implicit
-            }).setView([44.43, 26.10], 15);
+                layers: [satellite]
+            }).setView([44.43, 26.10], 16);
 
-            // Obiectul pentru selectorul de straturi
-            const baseMaps = {
-                "Harta": osm,
-                "Satelit": satellite,
-                "Topo": topo
-            };
-
-            // Adăugăm controlul pe hartă
+            const baseMaps = { "Satelit": satellite, "Harta": osm, "Topo": topo };
             L.control.layers(baseMaps, null, { position: 'topright' }).addTo(map);
             
-            marker = L.circleMarker([0,0], { radius: 7, color: '#fff', fillColor: '#007bff', fillOpacity: 1, weight: 3 }).addTo(map);
-            path = L.polyline([], { color: '#00ff41', weight: 6, opacity: 0.8 }).addTo(map);
+            marker = L.circleMarker([0,0], { radius: 8, color: '#fff', fillColor: '#007bff', fillOpacity: 1, weight: 3 }).addTo(map);
+            path = L.polyline([], { color: '#00ff41', weight: 6, opacity: 0.9 }).addTo(map);
         }
 
         function toggleSettings() {
@@ -140,10 +175,8 @@
                     const dLon = (lon - lastPos.lon) * Math.PI / 180;
                     const a = Math.sin(dLat/2)**2 + Math.cos(lastPos.lat*Math.PI/180)*Math.cos(lat*Math.PI/180)*Math.sin(dLon/2)**2;
                     distance += (R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)));
-                    
                     document.getElementById('dist').innerText = distance.toFixed(1);
                     document.getElementById('kcal').innerText = Math.round(distance * parseFloat(document.getElementById('weight').value) * 0.15);
-                    
                     coordsHistory.push(newPos);
                     path.setLatLngs(coordsHistory);
                 }
