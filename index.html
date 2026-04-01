@@ -19,33 +19,31 @@
             margin: 0;
             display: flex;
             flex-direction: column;
-            height: 100vh; /* Forțează încadrarea în înălțimea ecranului */
+            height: 100vh;
             overflow: hidden;
         }
 
         .header {
-            padding: 15px 20px;
+            padding: 10px 20px;
             display: flex;
             justify-content: space-between;
             align-items: center;
             flex-shrink: 0;
         }
 
-        .logo { font-weight: 800; letter-spacing: -1px; font-size: 1.2rem; }
-        .settings-icon { background: var(--card); padding: 8px 12px; border-radius: 10px; cursor: pointer; }
+        .logo { font-weight: 800; letter-spacing: -1px; font-size: 1.1rem; }
+        .settings-icon { background: var(--card); padding: 6px 10px; border-radius: 10px; cursor: pointer; }
 
-        /* Containerul principal se va adapta la spațiul rămas */
         .speed-container {
             flex: 1;
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            min-height: 0;
         }
 
         .speed-value {
-            font-size: clamp(5rem, 25vw, 9rem); /* Se micșorează automat pe ecrane mici */
+            font-size: clamp(6rem, 30vw, 10rem);
             font-weight: 800;
             color: var(--neon);
             line-height: 0.9;
@@ -53,9 +51,9 @@
         }
 
         .speed-unit {
-            font-size: 1rem;
+            font-size: 0.9rem;
             color: var(--text-dim);
-            letter-spacing: 4px;
+            letter-spacing: 3px;
             text-transform: uppercase;
         }
 
@@ -63,7 +61,7 @@
             background: var(--card);
             border-top-left-radius: 25px;
             border-top-right-radius: 25px;
-            padding: 15px;
+            padding: 15px 15px 30px 15px; /* Spațiu extra jos pentru navigarea telefonului */
             flex-shrink: 0;
         }
 
@@ -71,28 +69,28 @@
             display: grid;
             grid-template-columns: 1fr 1fr 1fr;
             gap: 10px;
-            margin-bottom: 15px;
+            margin-bottom: 20px; /* Distanță între cifre și buton */
         }
 
         .stat-card { text-align: center; }
-        .stat-label { font-size: 9px; color: var(--text-dim); text-transform: uppercase; margin-bottom: 2px; }
+        .stat-label { font-size: 8px; color: var(--text-dim); text-transform: uppercase; margin-bottom: 4px; }
         .stat-value { font-size: 1.1rem; font-weight: 600; }
 
         .controls { display: flex; width: 100%; }
         .btn {
             width: 100%;
-            padding: 15px;
-            border-radius: 12px;
+            padding: 16px;
+            border-radius: 14px;
             border: none;
             font-weight: bold;
             font-size: 1rem;
             cursor: pointer;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
         }
 
         .btn-start { background: var(--neon); color: black; }
         .btn-stop { background: #ff3b30; color: white; display: none; }
 
-        /* Overlay Setări */
         #settingsOverlay {
             position: fixed;
             inset: 0;
@@ -104,7 +102,7 @@
 
         .input-group { background: var(--card); padding: 15px; border-radius: 15px; margin-top: 20px; }
         input { background: transparent; border: none; border-bottom: 2px solid var(--neon); color: var(--neon); font-size: 2rem; width: 80px; text-align: center; }
-        .history-item { padding: 8px 0; border-bottom: 1px solid #222; font-size: 0.8rem; display: flex; justify-content: space-between; }
+        .history-item { padding: 10px 0; border-bottom: 1px solid #222; font-size: 0.8rem; display: flex; justify-content: space-between; }
     </style>
 </head>
 <body>
