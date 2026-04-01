@@ -7,9 +7,9 @@
     <style>
         :root {
             --neon: #00ff41;
-            --bg: #0a0a0a;
-            --card: #161616;
-            --text-dim: #666;
+            --bg: #000;
+            --card: #121212;
+            --text-dim: #888;
         }
 
         body {
@@ -17,9 +17,11 @@
             background-color: var(--bg);
             color: white;
             margin: 0;
+            padding: 0;
             display: flex;
             flex-direction: column;
             height: 100vh;
+            height: -webkit-fill-available; /* Rezolvă problemele de înălțime pe mobil */
             overflow: hidden;
         }
 
@@ -31,78 +33,78 @@
             flex-shrink: 0;
         }
 
-        .logo { font-weight: 800; letter-spacing: -1px; font-size: 1.1rem; }
-        .settings-icon { background: var(--card); padding: 6px 10px; border-radius: 10px; cursor: pointer; }
+        .logo { font-weight: 800; font-size: 1rem; }
+        .settings-icon { background: var(--card); padding: 5px 10px; border-radius: 8px; cursor: pointer; }
 
+        /* Zona de viteză ocupă spațiul rămas, dar e mai flexibilă */
         .speed-container {
             flex: 1;
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
+            min-height: 0;
         }
 
         .speed-value {
-            font-size: clamp(6rem, 30vw, 10rem);
+            font-size: 25vh; /* Se bazează pe înălțimea disponibilă */
             font-weight: 800;
             color: var(--neon);
-            line-height: 0.9;
-            text-shadow: 0 0 20px rgba(0, 255, 65, 0.2);
+            line-height: 1;
+            text-shadow: 0 0 15px rgba(0, 255, 65, 0.3);
         }
 
         .speed-unit {
-            font-size: 0.9rem;
+            font-size: 0.8rem;
             color: var(--text-dim);
-            letter-spacing: 3px;
+            letter-spacing: 2px;
             text-transform: uppercase;
         }
 
+        /* Secțiunea de jos - am integrat totul aici pentru a fi sigur că e vizibil */
         .bottom-section {
             background: var(--card);
-            border-top-left-radius: 25px;
-            border-top-right-radius: 25px;
-            padding: 15px 15px 30px 15px; /* Spațiu extra jos pentru navigarea telefonului */
+            border-top: 1px solid #222;
+            padding: 15px 15px 25px 15px;
             flex-shrink: 0;
         }
 
         .stats-grid {
             display: grid;
             grid-template-columns: 1fr 1fr 1fr;
-            gap: 10px;
-            margin-bottom: 20px; /* Distanță între cifre și buton */
+            gap: 5px;
+            margin-bottom: 15px;
         }
 
         .stat-card { text-align: center; }
-        .stat-label { font-size: 8px; color: var(--text-dim); text-transform: uppercase; margin-bottom: 4px; }
-        .stat-value { font-size: 1.1rem; font-weight: 600; }
+        .stat-label { font-size: 7px; color: var(--text-dim); text-transform: uppercase; }
+        .stat-value { font-size: 1rem; font-weight: 600; margin-top: 2px; }
 
-        .controls { display: flex; width: 100%; }
         .btn {
             width: 100%;
-            padding: 16px;
-            border-radius: 14px;
+            padding: 14px;
+            border-radius: 10px;
             border: none;
             font-weight: bold;
             font-size: 1rem;
             cursor: pointer;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            text-transform: uppercase;
         }
 
         .btn-start { background: var(--neon); color: black; }
         .btn-stop { background: #ff3b30; color: white; display: none; }
 
+        /* Overlay Setări */
         #settingsOverlay {
             position: fixed;
             inset: 0;
             background: var(--bg);
             z-index: 100;
             display: none;
-            padding: 30px 20px;
+            padding: 20px;
         }
 
-        .input-group { background: var(--card); padding: 15px; border-radius: 15px; margin-top: 20px; }
-        input { background: transparent; border: none; border-bottom: 2px solid var(--neon); color: var(--neon); font-size: 2rem; width: 80px; text-align: center; }
-        .history-item { padding: 10px 0; border-bottom: 1px solid #222; font-size: 0.8rem; display: flex; justify-content: space-between; }
+        input { background: transparent; border: none; border-bottom: 2px solid var(--neon); color: var(--neon); font-size: 2rem; width: 80px; text-align: center; outline: none; }
     </style>
 </head>
 <body>
@@ -133,16 +135,14 @@
             </div>
         </div>
 
-        <div class="controls">
-            <button id="startBtn" class="btn btn-start" onclick="startRun()">START ACTIVITATE</button>
-            <button id="stopBtn" class="btn btn-stop" onclick="stopRun()">FINALIZARE</button>
-        </div>
+        <button id="startBtn" class="btn btn-start" onclick="startRun()">START ACTIVITATE</button>
+        <button id="stopBtn" class="btn btn-stop" onclick="stopRun()">FINALIZARE</button>
     </div>
 
     <div id="settingsOverlay">
-        <div style="font-size: 30px; margin-bottom: 20px;" onclick="toggleSettings()">✕</div>
-        <div class="input-group">
-            <div class="stat-label">Greutate Totală (KG)</div>
+        <div style="font-size: 25px; margin-bottom: 20px;" onclick="toggleSettings()">✕</div>
+        <div style="background: #111; padding: 20px; border-radius: 15px;">
+            <div style="font-size: 10px; color: var(--text-dim); text-transform: uppercase;">Greutate Totală (KG)</div>
             <input type="number" id="weight" value="90" onchange="saveWeight()">
         </div>
         <div id="historyContent" style="margin-top: 20px;"></div>
@@ -195,7 +195,7 @@
     function stopRun() {
         if(distance > 0.05) {
             const h = JSON.parse(localStorage.getItem('hRides') || "[]");
-            h.unshift({ d: new Date().toLocaleDateString(), k: distance.toFixed(1), c: document.getElementById('kcal').innerText });
+            h.unshift({ d: new Date().toLocaleDateString(), k: distance.toFixed(1) });
             localStorage.setItem('hRides', JSON.stringify(h.slice(0, 5)));
         }
         location.reload();
@@ -203,7 +203,7 @@
 
     function renderHistory() {
         const h = JSON.parse(localStorage.getItem('hRides') || "[]");
-        document.getElementById('historyContent').innerHTML = h.map(r => `<div class="history-item"><span>${r.d}</span> <strong>${r.k} km</strong></div>`).join('');
+        document.getElementById('historyContent').innerHTML = h.map(r => `<div style="padding:10px 0; border-bottom:1px solid #222; font-size:12px;">${r.d}: ${r.k} km</div>`).join('');
     }
 </script>
 </body>
