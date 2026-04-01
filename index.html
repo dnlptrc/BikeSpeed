@@ -2,209 +2,155 @@
 <html lang="ro">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>BIKE SPEED</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>BIKE SPEED + MAP</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
-        :root {
-            --neon: #00ff41;
-            --bg: #000;
-            --card: #121212;
-            --text-dim: #888;
-        }
+        :root { --neon: #00ff41; --bg: #000; --card: #121212; --text-dim: #888; }
+        body { font-family: 'Inter', sans-serif; background-color: var(--bg); color: white; margin: 0; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
 
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: var(--bg);
-            color: white;
-            margin: 0;
-            padding: 0;
-            display: flex;
-            flex-direction: column;
-            height: 100vh;
-            height: -webkit-fill-available; /* Rezolvă problemele de înălțime pe mobil */
-            overflow: hidden;
-        }
-
-        .header {
-            padding: 10px 20px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-shrink: 0;
-        }
-
+        .header { padding: 10px 20px; display: flex; justify-content: space-between; align-items: center; z-index: 1000; background: rgba(0,0,0,0.8); }
         .logo { font-weight: 800; font-size: 1rem; }
         .settings-icon { background: var(--card); padding: 5px 10px; border-radius: 8px; cursor: pointer; }
 
-        /* Zona de viteză ocupă spațiul rămas, dar e mai flexibilă */
-        .speed-container {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            min-height: 0;
-        }
+        /* Harta ocupă tot fundalul central */
+        #map { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; filter: invert(100%) hue-rotate(180deg) brightness(95%) contrast(90%); opacity: 0.6; }
 
-        .speed-value {
-            font-size: 25vh; /* Se bazează pe înălțimea disponibilă */
-            font-weight: 800;
-            color: var(--neon);
-            line-height: 1;
-            text-shadow: 0 0 15px rgba(0, 255, 65, 0.3);
+        /* Overlay Viteză peste hartă */
+        .speed-overlay {
+            position: relative; flex: 1; display: flex; flex-direction: column; 
+            justify-content: center; align-items: center; z-index: 10; pointer-events: none;
         }
+        .speed-value { font-size: 8rem; font-weight: 900; color: var(--neon); line-height: 0.8; text-shadow: 0 0 20px rgba(0,0,0,0.9); }
+        .speed-unit { font-size: 0.9rem; color: #fff; letter-spacing: 3px; text-shadow: 1px 1px 5px #000; }
 
-        .speed-unit {
-            font-size: 0.8rem;
-            color: var(--text-dim);
-            letter-spacing: 2px;
-            text-transform: uppercase;
-        }
-
-        /* Secțiunea de jos - am integrat totul aici pentru a fi sigur că e vizibil */
-        .bottom-section {
-            background: var(--card);
-            border-top: 1px solid #222;
-            padding: 15px 15px 25px 15px;
-            flex-shrink: 0;
-        }
-
-        .stats-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr 1fr;
-            gap: 5px;
-            margin-bottom: 15px;
-        }
-
+        /* Panoul de jos */
+        .bottom-section { position: absolute; bottom: 0; left: 0; right: 0; background: var(--card); padding: 15px 15px 35px 15px; border-top: 2px solid var(--neon); z-index: 1000; }
+        .stats-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 15px; }
         .stat-card { text-align: center; }
-        .stat-label { font-size: 7px; color: var(--text-dim); text-transform: uppercase; }
-        .stat-value { font-size: 1rem; font-weight: 600; margin-top: 2px; }
+        .stat-label { font-size: 8px; color: var(--text-dim); text-transform: uppercase; }
+        .stat-value { font-size: 1.1rem; font-weight: 700; }
 
-        .btn {
-            width: 100%;
-            padding: 14px;
-            border-radius: 10px;
-            border: none;
-            font-weight: bold;
-            font-size: 1rem;
-            cursor: pointer;
-            text-transform: uppercase;
-        }
-
-        .btn-start { background: var(--neon); color: black; }
+        .btn { width: 100%; padding: 16px; border-radius: 12px; border: none; font-weight: 900; font-size: 1rem; cursor: pointer; text-transform: uppercase; }
+        .btn-start { background: var(--neon); color: #000; }
         .btn-stop { background: #ff3b30; color: white; display: none; }
 
-        /* Overlay Setări */
-        #settingsOverlay {
-            position: fixed;
-            inset: 0;
-            background: var(--bg);
-            z-index: 100;
-            display: none;
-            padding: 20px;
-        }
-
+        #settingsOverlay { position: fixed; inset: 0; background: var(--bg); z-index: 2000; display: none; padding: 30px; }
         input { background: transparent; border: none; border-bottom: 2px solid var(--neon); color: var(--neon); font-size: 2rem; width: 80px; text-align: center; outline: none; }
     </style>
 </head>
 <body>
+
+    <div id="map"></div>
 
     <div class="header">
         <div class="logo">BIKE <span style="color:var(--neon)">SPEED</span></div>
         <div class="settings-icon" onclick="toggleSettings()">⚙️</div>
     </div>
 
-    <div class="speed-container">
+    <div class="speed-overlay">
         <div class="speed-value" id="speed">0</div>
         <div class="speed-unit">km/h</div>
     </div>
 
     <div class="bottom-section">
         <div class="stats-grid">
-            <div class="stat-card">
-                <div class="stat-label">Distanță</div>
-                <div class="stat-value" id="dist">0.0</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-label">Timp</div>
-                <div class="stat-value" id="time">00:00</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-label">Calorii</div>
-                <div class="stat-value" id="kcal">0</div>
-            </div>
+            <div class="stat-card"><div class="stat-label">Dist.</div><div class="stat-value" id="dist">0.0</div></div>
+            <div class="stat-card"><div class="stat-label">Timp</div><div class="stat-value" id="time">00:00</div></div>
+            <div class="stat-card"><div class="stat-label">Kcal</div><div class="stat-value" id="kcal">0</div></div>
         </div>
-
         <button id="startBtn" class="btn btn-start" onclick="startRun()">START ACTIVITATE</button>
         <button id="stopBtn" class="btn btn-stop" onclick="stopRun()">FINALIZARE</button>
     </div>
 
     <div id="settingsOverlay">
-        <div style="font-size: 25px; margin-bottom: 20px;" onclick="toggleSettings()">✕</div>
+        <div style="font-size: 30px; margin-bottom: 20px;" onclick="toggleSettings()">✕</div>
         <div style="background: #111; padding: 20px; border-radius: 15px;">
-            <div style="font-size: 10px; color: var(--text-dim); text-transform: uppercase;">Greutate Totală (KG)</div>
+            <div style="font-size: 10px; color: var(--text-dim);">GREUTATE TOTALĂ (KG)</div>
             <input type="number" id="weight" value="90" onchange="saveWeight()">
         </div>
         <div id="historyContent" style="margin-top: 20px;"></div>
     </div>
 
-<script>
-    let distance = 0, lastPos = null, startTime, timerIdx, watchIdx;
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        let distance = 0, lastPos = null, startTime, timerIdx, watchIdx, map, marker, path;
+        let coordsHistory = [];
 
-    window.onload = () => {
-        if(localStorage.getItem('userW')) document.getElementById('weight').value = localStorage.getItem('userW');
-        renderHistory();
-    };
+        window.onload = () => {
+            initMap();
+            if(localStorage.getItem('userW')) document.getElementById('weight').value = localStorage.getItem('userW');
+            renderHistory();
+        };
 
-    function toggleSettings() {
-        const el = document.getElementById('settingsOverlay');
-        el.style.display = el.style.display === 'block' ? 'none' : 'block';
-    }
-
-    function saveWeight() {
-        localStorage.setItem('userW', document.getElementById('weight').value);
-    }
-
-    async function startRun() {
-        if ('wakeLock' in navigator) { try { await navigator.wakeLock.request('screen'); } catch(e) {} }
-        document.getElementById('startBtn').style.display = 'none';
-        document.getElementById('stopBtn').style.display = 'block';
-        startTime = Date.now();
-        timerIdx = setInterval(() => {
-            const d = new Date(Date.now() - startTime);
-            document.getElementById('time').innerText = `${d.getUTCMinutes().toString().padStart(2, '0')}:${d.getUTCSeconds().toString().padStart(2, '0')}`;
-        }, 1000);
-
-        watchIdx = navigator.geolocation.watchPosition(p => {
-            const c = p.coords;
-            const s = c.speed ? Math.round(c.speed * 3.6) : 0;
-            document.getElementById('speed').innerText = s;
-            if(lastPos && s > 0.5) {
-                const R = 6371;
-                const dLat = (c.latitude - lastPos.latitude) * Math.PI / 180;
-                const dLon = (c.longitude - lastPos.longitude) * Math.PI / 180;
-                const a = Math.sin(dLat/2)**2 + Math.cos(lastPos.latitude*Math.PI/180)*Math.cos(c.latitude*Math.PI/180)*Math.sin(dLon/2)**2;
-                distance += (R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)));
-                document.getElementById('dist').innerText = distance.toFixed(1);
-                document.getElementById('kcal').innerText = Math.round(distance * parseFloat(document.getElementById('weight').value) * 0.15);
-            }
-            lastPos = c;
-        }, null, { enableHighAccuracy: true });
-    }
-
-    function stopRun() {
-        if(distance > 0.05) {
-            const h = JSON.parse(localStorage.getItem('hRides') || "[]");
-            h.unshift({ d: new Date().toLocaleDateString(), k: distance.toFixed(1) });
-            localStorage.setItem('hRides', JSON.stringify(h.slice(0, 5)));
+        function initMap() {
+            // Inițializăm harta pe o poziție generică (București/Centru)
+            map = L.map('map', { zoomControl: false, attributionControl: false }).setView([44.43, 26.10], 15);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+            
+            marker = L.circleMarker([0,0], { radius: 8, color: '#fff', fillColor: '#007bff', fillOpacity: 1, weight: 2 }).addTo(map);
+            path = L.polyline([], { color: '#00ff41', weight: 5 }).addTo(map);
         }
-        location.reload();
-    }
 
-    function renderHistory() {
-        const h = JSON.parse(localStorage.getItem('hRides') || "[]");
-        document.getElementById('historyContent').innerHTML = h.map(r => `<div style="padding:10px 0; border-bottom:1px solid #222; font-size:12px;">${r.d}: ${r.k} km</div>`).join('');
-    }
-</script>
+        function toggleSettings() {
+            const el = document.getElementById('settingsOverlay');
+            el.style.display = el.style.display === 'block' ? 'none' : 'block';
+        }
+
+        function saveWeight() { localStorage.setItem('userW', document.getElementById('weight').value); }
+
+        async function startRun() {
+            if ('wakeLock' in navigator) { try { await navigator.wakeLock.request('screen'); } catch(e) {} }
+            document.getElementById('startBtn').style.display = 'none';
+            document.getElementById('stopBtn').style.display = 'block';
+            startTime = Date.now();
+            timerIdx = setInterval(() => {
+                const d = new Date(Date.now() - startTime);
+                document.getElementById('time').innerText = `${d.getUTCMinutes().toString().padStart(2, '0')}:${d.getUTCSeconds().toString().padStart(2, '0')}`;
+            }, 1000);
+
+            watchIdx = navigator.geolocation.watchPosition(p => {
+                const lat = p.coords.latitude;
+                const lon = p.coords.longitude;
+                const s = p.coords.speed ? Math.round(p.coords.speed * 3.6) : 0;
+                
+                document.getElementById('speed').innerText = s;
+                
+                // Actualizare hartă
+                const newPos = [lat, lon];
+                map.panTo(newPos);
+                marker.setLatLng(newPos);
+                
+                if(lastPos && s > 0.5) {
+                    const R = 6371;
+                    const dLat = (lat - lastPos.lat) * Math.PI / 180;
+                    const dLon = (lon - lastPos.lon) * Math.PI / 180;
+                    const a = Math.sin(dLat/2)**2 + Math.cos(lastPos.lat*Math.PI/180)*Math.cos(lat*Math.PI/180)*Math.sin(dLon/2)**2;
+                    distance += (R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)));
+                    
+                    document.getElementById('dist').innerText = distance.toFixed(1);
+                    document.getElementById('kcal').innerText = Math.round(distance * parseFloat(document.getElementById('weight').value) * 0.15);
+                    
+                    coordsHistory.push(newPos);
+                    path.setLatLngs(coordsHistory);
+                }
+                lastPos = {lat, lon};
+            }, null, { enableHighAccuracy: true });
+        }
+
+        function stopRun() {
+            if(distance > 0.05) {
+                const h = JSON.parse(localStorage.getItem('hRides') || "[]");
+                h.unshift({ d: new Date().toLocaleDateString(), k: distance.toFixed(1) });
+                localStorage.setItem('hRides', JSON.stringify(h.slice(0, 5)));
+            }
+            location.reload();
+        }
+
+        function renderHistory() {
+            const h = JSON.parse(localStorage.getItem('hRides') || "[]");
+            document.getElementById('historyContent').innerHTML = h.map(r => `<div style="padding:10px 0; border-bottom:1px solid #222; font-size:14px;">${r.d}: ${r.k} km</div>`).join('');
+        }
+    </script>
 </body>
 </html>
